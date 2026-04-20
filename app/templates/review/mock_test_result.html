@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ test.title }} - 结果 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('review.mock_tests') }}">模拟测试</a></li>
+            <li class="breadcrumb-item active">{{ test.title }} - 结果</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header bg-{{ 'success' if test.score >= test.max_score * 0.6 else 'danger' }} text-white">
+            <h5 class="mb-0">{{ test.title }}</h5>
+        </div>
+        <div class="card-body text-center">
+            <h1 class="display-1">{{ test.score }}</h1>
+            <p class="lead">满分 {{ test.max_score }} 分</p>
+            <p class="text-muted">正确率：{{ (test.correct_count / test.total_questions * 100)|round|int }}%</p>
+            <div class="progress mx-auto" style="max-width: 400px; height: 20px;">
+                <div class="progress-bar bg-{{ 'success' if test.score >= test.max_score * 0.6 else 'danger' }}"
+                     style="width: {{ (test.score / test.max_score * 100)|round|int }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">题目详情</h6>
+        </div>
+        <div class="card-body">
+            {% for item in test.items %}
+            <div class="card mb-3 {% if item.is_correct %}border-success{% else %}border-danger{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h6>第{{ item.question_number }}题</h6>
+                        {% if item.is_correct %}
+                        <span class="badge bg-success">正确</span>
+                        {% else %}
+                        <span class="badge bg-danger">错误</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted">{{ item.question_text }}</p>
+                    <div class="row small">
+                        <div class="col-6">
+                            <strong>你的答案：</strong>
+                            <span class="{{ 'text-success' if item.is_correct else 'text-danger' }}">{{ item.student_answer or '未作答' }}</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>正确答案：</strong>
+                            <span class="text-success">{{ item.answer }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

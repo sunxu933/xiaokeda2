@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}上传资料 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('materials.list') }}">学习资料</a></li>
+            <li class="breadcrumb-item active">上传资料</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">上传学习资料</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                <div class="mb-4">
+                    <label class="form-label">选择文件</label>
+                    <input type="file" name="files" multiple class="form-control" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx" required>
+                    <small class="text-muted">支持格式：图片、PDF、Word文档，可一次上传多个文件</small>
+                </div>
+
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input type="checkbox" name="auto_analyze" class="form-check-input" id="autoAnalyze" checked>
+                        <label class="form-check-label" for="autoAnalyze">
+                            自动AI分析（上传后自动识别知识点和题目）
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-upload"></i> 上传
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h6 class="mb-0">支持的文件类型</h6>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li><strong>图片：</strong>PNG、JPG、GIF、WebP - 直接拍照上传</li>
+                <li><strong>PDF：</strong>试卷、练习册等 - 自动分页识别</li>
+                <li><strong>Word：</strong>DOC、DOCX格式的文档资料</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

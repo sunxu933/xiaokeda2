@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}学生档案 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h4 class="mb-4">学生档案</h4>
+
+    {% if students %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">切换学生</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for s in students %}
+                <div class="col-md-3 mb-3">
+                    <div class="card {% if current_student and current_student.id == s.id %}border-primary{% endif %}">
+                        <div class="card-body text-center">
+                            <i class="bi bi-person-circle" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">{{ s.name }}</h6>
+                            <p class="text-muted small">{{ s.grade }}年级</p>
+                            {% if current_student and current_student.id == s.id %}
+                            <span class="badge bg-primary">当前</span>
+                            {% else %}
+                            <form action="{{ url_for('settings.select_student', id=s.id) }}" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">选择</button>
+                            </form>
+                            {% endif %}
+                            <form action="{{ url_for('settings.delete_student', id=s.id) }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定删除？')">删除</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">添加学生</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {{ form.hidden_tag() }}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">姓名</label>
+                        {{ form.name(class="form-control") }}
+                        {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors[0] }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">年级</label>
+                        {{ form.grade(class="form-select") }}
+                        {% if form.grade.errors %}<div class="text-danger small">{{ form.grade.errors[0] }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">学校（可选）</label>
+                    {{ form.school(class="form-control") }}
+                    {% if form.school.errors %}<div class="text-danger small">{{ form.school.errors[0] }}</div>{% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary">添加</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

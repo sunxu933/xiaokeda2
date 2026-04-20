@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}错题本 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">错题本</h4>
+        <div>
+            <a href="{{ url_for('mistakes.review_due') }}" class="btn btn-warning me-2">
+                <i class="bi bi-clock"></i> 待复习
+            </a>
+            <a href="{{ url_for('mistakes.add') }}" class="btn btn-primary">
+                <i class="bi bi-plus"></i> 添加错题
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <select name="subject" class="form-select">
+                        <option value="">全部科目</option>
+                        <option value="语文" {% if request.args.get('subject') == '语文' %}selected{% endif %}>语文</option>
+                        <option value="数学" {% if request.args.get('subject') == '数学' %}selected{% endif %}>数学</option>
+                        <option value="英语" {% if request.args.get('subject') == '英语' %}selected{% endif %}>英语</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="mastered" class="form-select">
+                        <option value="">全部状态</option>
+                        <option value="false" {% if request.args.get('mastered') == 'false' %}selected{% endif %}>未掌握</option>
+                        <option value="true" {% if request.args.get('mastered') == 'true' %}selected{% endif %}>已掌握</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100">筛选</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if mistakes %}
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>科目</th>
+                        <th>主题</th>
+                        <th>题目摘要</th>
+                        <th>错误次数</th>
+                        <th>状态</th>
+                        <th>下次复习</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in mistakes %}
+                    <tr>
+                        <td>
+                            <span class="badge subject-badge" style="background-color: {{ m.subject|subject_color }}; color: white;">
+                                {{ m.subject }}
+                            </span>
+                        </td>
+                        <td>{{ m.topic or '综合' }}</td>
+                        <td>{{ m.question_text[:30] }}{% if m.question_text|length > 30 %}...{% endif %}</td>
+                        <td>{{ m.review_count }}</td>
+                        <td>
+                            {% if m.mastered %}
+                            <span class="badge bg-success">已掌握</span>
+                            {% else %}
+                            <span class="badge bg-warning">未掌握</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ m.next_review|dateformat if m.next_review else '-' }}</td>
+                        <td>
+                            <a href="{{ url_for('mistakes.detail', id=m.id) }}" class="btn btn-sm btn-outline-primary">查看</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <p class="text-muted">暂无错题记录</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

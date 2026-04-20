@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}AI交互历史 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">AI交互历史</h4>
+        <a href="{{ url_for('ai_tutor.chat') }}" class="btn btn-primary">新对话</a>
+    </div>
+
+    {% if interactions %}
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>类型</th>
+                        <th>科目</th>
+                        <th>提示词摘要</th>
+                        <th>模型</th>
+                        <th>耗时</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in interactions %}
+                    <tr>
+                        <td>{{ log.created_at|datetimeformat }}</td>
+                        <td>{{ log.interaction_type }}</td>
+                        <td>{{ log.subject or '-' }}</td>
+                        <td>{{ log.prompt_text[:50] if log.prompt_text else '-' }}{% if log.prompt_text and log.prompt_text|length > 50 %}...{% endif %}</td>
+                        <td>{{ log.model_used }}</td>
+                        <td>{{ log.duration_ms }}ms</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <p class="text-muted">暂无交互记录</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

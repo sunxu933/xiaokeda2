@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ test.title }} - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('review.mock_tests') }}">模拟测试</a></li>
+            <li class="breadcrumb-item active">{{ test.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">{{ test.title }}</h5>
+            <small class="text-muted">{{ test.subject }} · {{ test.total_questions }}题 · 满分{{ test.max_score }}分</small>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('review.submit_mock_test', id=test.id) }}">
+                <input type="hidden" name="time_spent" id="timeSpent" value="0">
+
+                {% for item in test.items %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6>第{{ item.question_number }}题
+                            <span class="badge bg-secondary">{{ item.question_type }}</span>
+                            <span class="badge bg-info">{{ item.score }}分</span>
+                        </h6>
+                        <p>{{ item.question_text }}</p>
+
+                        {% if item.options %}
+                        {% set options = item.options|from_json %}
+                        <div class="mt-3">
+                            {% for option in options %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="answer_{{ item.id }}" value="{{ option }}" id="q{{ item.id }}_{{ loop.index }}">
+                                <label class="form-check-label" for="q{{ item.id }}_{{ loop.index }}">{{ option }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="mt-3">
+                            <textarea name="answer_{{ item.id }}" class="form-control" rows="2" placeholder="请输入答案"></textarea>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-success btn-lg w-100">
+                    <i class="bi bi-check-circle"></i> 提交答案
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}错题详情 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('mistakes.list') }}">错题本</a></li>
+            <li class="breadcrumb-item active">错题详情</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge me-2" style="background-color: {{ mistake.subject|subject_color }}; color: white;">{{ mistake.subject }}</span>
+                            <span class="badge bg-secondary">{{ mistake.topic or '综合' }}</span>
+                        </div>
+                        <div>
+                            {% if mistake.mastered %}
+                            <span class="badge bg-success">已掌握</span>
+                            {% else %}
+                            <span class="badge bg-warning">未掌握</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">题目</h5>
+                    <p class="card-text">{{ mistake.question_text }}</p>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>学生答案：</strong>
+                            <span class="text-danger">{{ mistake.student_answer or '未填写' }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>正确答案：</strong>
+                            <span class="text-success">{{ mistake.correct_answer or '未填写' }}</span>
+                        </div>
+                    </div>
+
+                    {% if mistake.explanation %}
+                    <h6>解析</h6>
+                    <p>{{ mistake.explanation|nl2br }}</p>
+                    {% endif %}
+
+                    <div class="row text-muted small">
+                        <div class="col-md-4">
+                            <strong>来源：</strong>{{ mistake.source }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>复习次数：</strong>{{ mistake.review_count }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>下次复习：</strong>{{ mistake.next_review|dateformat if mistake.next_review else '未安排' }}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('ai_tutor.explain', mistake_id=mistake.id) }}" class="btn btn-primary">
+                            <i class="bi bi-robot"></i> AI讲解
+                        </a>
+                        <a href="{{ url_for('ai_tutor.practice', mistake_id=mistake.id) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-repeat"></i> 举一反三
+                        </a>
+                        {% if not mistake.mastered %}
+                        <form action="{{ url_for('mistakes.mark_reviewed', id=mistake.id) }}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-warning">标记已复习</button>
+                        </form>
+                        <form action="{{ url_for('mistakes.mark_mastered', id=mistake.id) }}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-success">标记已掌握</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">操作</h6>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('mistakes.edit', id=mistake.id) }}" class="btn btn-outline-secondary w-100 mb-2">
+                        <i class="bi bi-pencil"></i> 编辑错题
+                    </a>
+                    <form action="{{ url_for('mistakes.delete', id=mistake.id) }}" method="post" onsubmit="return confirm('确定删除这道错题吗？')">
+                        <button type="submit" class="btn btn-outline-danger w-100">
+                            <i class="bi bi-trash"></i> 删除错题
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

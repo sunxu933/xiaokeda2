@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}AI辅导 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h4 class="mb-4">AI学习辅导</h4>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card" style="height: 60vh;">
+                <div class="card-header">
+                    <h6 class="mb-0">AI对话</h6>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div id="chatMessages" class="flex-grow-1 overflow-auto mb-3" style="max-height: calc(60vh - 180px);">
+                        <div class="alert alert-info">
+                            您好！我是AI学习助手。有什么学习问题可以问我，我可以帮您讲解题目、生成练习题等。
+                        </div>
+                    </div>
+                    <form id="chatForm">
+                        <div class="input-group">
+                            <input type="text" id="messageInput" class="form-control" placeholder="输入您的问题..." autocomplete="off">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> 发送
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">快速入口</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('mistakes.review_due') }}" class="btn btn-outline-warning">
+                            <i class="bi bi-clock"></i> 复习错题
+                        </a>
+                        <a href="{{ url_for('review.practice') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil"></i> 章节练习
+                        </a>
+                        <a href="{{ url_for('materials.practice') }}" class="btn btn-outline-success">
+                            <i class="bi bi-book"></i> 知识库练习
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">AI交互历史</h6>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('ai_tutor.history') }}" class="btn btn-outline-secondary w-100">
+                        查看历史记录
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let chatHistory = [];
+
+document.getElementById('chatForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    if (!message) return;
+
+    addMessage(message, 'user');
+    chatHistory.push({ role: 'user', content: message });
+    input.value = '';
+
+    try {
+        const response = await fetch('{{ url_for("ai_tutor.chat_api") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: chatHistory.slice(-10),
+                subject: '{{ g.current_student.subject if g.current_student else "" }}'
+            })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            addMessage(data.response, 'ai');
+            chatHistory.push({ role: 'assistant', content: data.response });
+        } else {
+            addMessage('抱歉，出了点问题：' + data.error, 'ai');
+        }
+    } catch (err) {
+        addMessage('网络错误，请重试', 'ai');
+    }
+});
+
+function addMessage(content, type) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = 'alert mb-2 ' + (type === 'user' ? 'alert-primary text-end' : 'alert-light border');
+    div.innerHTML = content.replace(/\n/g, '<br>');
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+</script>
+{% endblock %}

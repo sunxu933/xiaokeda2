@@ -1,0 +1,21 @@
+{
+    "project": "Example",
+    "branchName": "example-ralph",
+    "description": "Example",
+    "userStories": [
+      {
+        "id": "US-001",
+        "title": "example - remove this and create a new one",
+        "description": "description example",
+        "acceptanceCriteria": [
+          "acceptance criteria 1",
+          "acceptance criteria 2",
+          "acceptance criteria 3"
+        ],
+        "priority": 1,
+        "passes": true,
+        "notes": "...",
+        "dependsOn": []
+      }
+    ]
+}

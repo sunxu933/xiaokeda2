@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}本地浏览 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">本地文件浏览</h4>
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#setDirModal">
+            <i class="bi bi-folder-plus"></i> 设置目录
+        </button>
+    </div>
+
+    {% if not base_dir %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i> 请先设置浏览根目录
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body" id="fileList">
+            <p class="text-muted text-center">请先设置浏览目录</p>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="setDirModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">设置浏览目录</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="setDirForm">
+                <div class="modal-body">
+                    <input type="text" name="path" id="dirPath" class="form-control" placeholder="输入目录路径，如 D:\学习资料" value="{{ base_dir }}">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadFiles(path = '') {
+    const res = await fetch('{{ url_for("materials.browse_list") }}?path=' + encodeURIComponent(path));
+    const data = await res.json();
+
+    if (data.error) {
+        document.getElementById('fileList').innerHTML = '<p class="text-danger">' + data.error + '</p>';
+        return;
+    }
+
+    let html = '<nav class="breadcrumb mb-3">';
+    html += '<a class="breadcrumb-item" href="#" onclick="loadFiles(\'\')">根目录</a>';
+
+    const parts = path.split('/').filter(p => p);
+    let currentPath = '';
+    for (const part of parts) {
+        currentPath += part + '/';
+        html += '<a class="breadcrumb-item" href="#" onclick="loadFiles(\'' + currentPath.slice(0, -1) + '\')">' + part + '</a>';
+    }
+    html += '</nav>';
+
+    if (data.items.length === 0) {
+        html += '<p class="text-muted">目录为空</p>';
+    } else {
+        html += '<div class="list-group">';
+        for (const item of data.items) {
+            if (item.is_dir) {
+                html += '<a class="list-group-item list-group-item-action" href="#" onclick="loadFiles(\'' + item.path + '\')"><i class="bi bi-folder"></i> ' + item.name + '</a>';
+            } else {
+                html += '<div class="list-group-item d-flex justify-content-between align-items-center"><span><i class="bi bi-file-text"></i> ' + item.name + '</span><button class="btn btn-sm btn-outline-primary" onclick="importFile(\'' + item.path + '\')">导入</button></div>';
+            }
+        }
+        html += '</div>';
+    }
+
+    document.getElementById('fileList').innerHTML = html;
+}
+
+async function importFile(path) {
+    const res = await fetch('{{ url_for("materials.browse_import") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path })
+    });
+    const data = await res.json();
+    if (data.success) {
+        alert('导入成功！');
+        location.href = '{{ url_for("materials.detail", id=0) }}'.replace('0', data.material_id);
+    } else {
+        alert('导入失败: ' + data.error);
+    }
+}
+
+document.getElementById('setDirForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const path = document.getElementById('dirPath').value;
+    await fetch('{{ url_for("materials.set_base_dir") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path })
+    });
+    location.reload();
+});
+
+loadFiles('');
+</script>
+{% endblock %}

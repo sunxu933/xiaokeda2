@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}复习计划 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">复习计划</h4>
+        <a href="{{ url_for('review.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> 创建计划
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <select name="status" class="form-select">
+                        <option value="">全部状态</option>
+                        <option value="draft">草稿</option>
+                        <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>进行中</option>
+                        <option value="completed">已完成</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-secondary w-100">筛选</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if plans %}
+    <div class="row">
+        {% for plan in plans %}
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-primary me-2">{{ plan.subject or '全科' }}</span>
+                        {{ plan.title }}
+                    </div>
+                    {% if plan.status == 'active' %}
+                    <span class="badge bg-success">进行中</span>
+                    {% elif plan.status == 'completed' %}
+                    <span class="badge bg-secondary">已完成</span>
+                    {% else %}
+                    <span class="badge bg-warning">草稿</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="row text-muted small mb-2">
+                        <div class="col-6">
+                            {% if plan.exam_date %}
+                            考试日期：{{ plan.exam_date|dateformat }}
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            任务：{{ plan.completed_tasks }}/{{ plan.total_tasks }}
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ plan.progress_percentage }}%"></div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('review.plan_detail', id=plan.id) }}" class="btn btn-sm btn-outline-primary">查看详情</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <p class="text-muted">暂无复习计划</p>
+        <a href="{{ url_for('review.create') }}" class="btn btn-primary">创建第一个计划</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}编辑错题 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('mistakes.list') }}">错题本</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('mistakes.detail', id=mistake.id) }}">错题详情</a></li>
+            <li class="breadcrumb-item active">编辑</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">编辑错题</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">科目</label>
+                        <select name="subject" class="form-select" required>
+                            <option value="语文" {% if mistake.subject == '语文' %}selected{% endif %}>语文</option>
+                            <option value="数学" {% if mistake.subject == '数学' %}selected{% endif %}>数学</option>
+                            <option value="英语" {% if mistake.subject == '英语' %}selected{% endif %}>英语</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">主题</label>
+                        <input type="text" name="topic" class="form-control" value="{{ mistake.topic or '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">知识点</label>
+                        <input type="text" name="knowledge_point" class="form-control" value="{{ mistake.knowledge_point or '' }}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">题目内容</label>
+                    <textarea name="question_text" class="form-control" rows="3" required>{{ mistake.question_text }}</textarea>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">学生错误答案</label>
+                        <input type="text" name="student_answer" class="form-control" value="{{ mistake.student_answer or '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">正确答案</label>
+                        <input type="text" name="correct_answer" class="form-control" value="{{ mistake.correct_answer or '' }}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">解析</label>
+                    <textarea name="explanation" class="form-control" rows="3">{{ mistake.explanation or '' }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">难度</label>
+                    <select name="difficulty" class="form-select">
+                        <option value="easy" {% if mistake.difficulty == 'easy' %}selected{% endif %}>简单</option>
+                        <option value="medium" {% if mistake.difficulty == 'medium' %}selected{% endif %}>中等</option>
+                        <option value="hard" {% if mistake.difficulty == 'hard' %}selected{% endif %}>困难</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">保存</button>
+                <a href="{{ url_for('mistakes.detail', id=mistake.id) }}" class="btn btn-secondary">取消</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

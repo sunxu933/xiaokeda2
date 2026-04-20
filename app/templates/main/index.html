@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h4 class="mb-4">今日概览</h4>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-stat">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">今日作业</h6>
+                            <h3 class="mb-0">{{ stats.today_homework }}</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-journal-text fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stat">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">待复习</h6>
+                            <h3 class="mb-0">{{ stats.due_reviews }}</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-exclamation-triangle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stat">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">进行中计划</h6>
+                            <h3 class="mb-0">{{ stats.active_plans }}</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-calendar-check fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stat">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">未掌握错题</h6>
+                            <h3 class="mb-0">{{ stats.unmastered_mistakes }}</h3>
+                        </div>
+                        <div class="text-danger">
+                            <i class="bi bi-x-circle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">今日作业</h6>
+                    <a href="{{ url_for('homework.add') }}" class="btn btn-sm btn-primary">添加作业</a>
+                </div>
+                <div class="card-body">
+                    {% if today_homework %}
+                    <ul class="list-group list-group-flush">
+                        {% for hw in today_homework %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-{{ 'success' if hw.status == 'completed' else 'warning' }} me-2">{{ hw.subject }}</span>
+                                {{ hw.title }}
+                            </div>
+                            <a href="{{ url_for('homework.detail', id=hw.id) }}" class="btn btn-sm btn-outline-primary">查看</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">今日暂无作业</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">待复习错题</h6>
+                    <a href="{{ url_for('mistakes.review_due') }}" class="btn btn-sm btn-primary">开始复习</a>
+                </div>
+                <div class="card-body">
+                    {% if due_reviews %}
+                    <ul class="list-group list-group-flush">
+                        {% for m in due_reviews %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-{{ 'danger' if m.difficulty == 'hard' else 'warning' if m.difficulty == 'medium' else 'success' }} me-2">{{ m.subject }}</span>
+                                {{ m.topic or '综合' }}
+                            </div>
+                            <a href="{{ url_for('mistakes.detail', id=m.id) }}" class="btn btn-sm btn-outline-warning">复习</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">今日无需复习</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if active_plans %}
+    <div class="mt-4">
+        <h5 class="mb-3">进行中的复习计划</h5>
+        <div class="row g-3">
+            {% for plan in active_plans %}
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ plan.title }}</h6>
+                        <p class="text-muted small mb-2">
+                            {% if plan.subject %}{{ plan.subject }} · {% endif %}
+                            距考试还有 {{ (plan.exam_date - today.date()).days }} 天
+                        </p>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar" role="progressbar" style="width: {{ plan.progress_percentage }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ plan.completed_tasks }}/{{ plan.total_tasks }} 任务完成</small>
+                        <a href="{{ url_for('review.plan_detail', id=plan.id) }}" class="btn btn-sm btn-outline-primary w-100 mt-2">查看详情</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

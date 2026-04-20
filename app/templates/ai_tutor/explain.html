@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}AI讲解 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('ai_tutor.chat') }}">AI辅导</a></li>
+            <li class="breadcrumb-item active">错题讲解</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <span class="badge me-2" style="background-color: {{ mistake.subject|subject_color }}; color: white;">{{ mistake.subject }}</span>
+                    {{ mistake.topic or '错题讲解' }}
+                </div>
+                <div class="card-body">
+                    <h5>题目</h5>
+                    <p class="mb-4">{{ mistake.question_text }}</p>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <strong>学生答案：</strong>
+                            <span class="text-danger">{{ mistake.student_answer or '未填写' }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>正确答案：</strong>
+                            <span class="text-success">{{ mistake.correct_answer or '未填写' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-robot"></i> AI讲解</h5>
+                </div>
+                <div class="card-body">
+                    {% if explanation %}
+                    <div class="explanation-content">
+                        {{ explanation|nl2br }}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <button id="generateBtn" class="btn btn-primary btn-lg">
+                            <i class="bi bi-magic"></i> 生成讲解
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">操作</h6>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('mistakes.detail', id=mistake.id) }}" class="btn btn-outline-secondary w-100 mb-2">
+                        返回错题详情
+                    </a>
+                    <a href="{{ url_for('ai_tutor.practice', mistake_id=mistake.id) }}" class="btn btn-outline-primary w-100 mb-2">
+                        举一反三练习
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('generateBtn')?.addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 生成中...';
+
+    try {
+        const response = await fetch('{{ url_for("ai_tutor.generate_explanation", id=mistake.id) }}', {
+            method: 'POST'
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('生成失败: ' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-magic"></i> 重试';
+        }
+    } catch (err) {
+        alert('网络错误');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-magic"></i> 重试';
+    }
+});
+</script>
+{% endblock %}

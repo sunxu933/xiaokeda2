@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}知识汇总 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h4 class="mb-4">知识汇总</h4>
+
+    <div class="row">
+        {% for summary in summaries %}
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge me-2" style="background-color: {{ summary.subject|subject_color }}; color: white;">{{ summary.subject }}</span>
+                        {{ summary.chapter }}
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary generate-btn" data-chapter="{{ summary.chapter }}" data-subject="{{ summary.subject }}">
+                        <i class="bi bi-magic"></i> AI生成
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="summary-content" id="summary-{{ loop.index }}">
+                        <p class="text-muted">点击按钮生成知识汇总</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.generate-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const chapter = this.dataset.chapter;
+        const subject = this.dataset.subject;
+        const contentDiv = this.closest('.card').querySelector('.summary-content');
+
+        contentDiv.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 生成中...';
+
+        const res = await fetch('{{ url_for("review.generate_knowledge_summary") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chapter, subject })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            contentDiv.innerHTML = data.content.replace(/\n/g, '<br>');
+        } else {
+            contentDiv.innerHTML = '<p class="text-danger">生成失败</p>';
+        }
+    });
+});
+</script>
+{% endblock %}

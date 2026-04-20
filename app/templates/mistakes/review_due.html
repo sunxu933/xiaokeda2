@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}待复习 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">今日待复习</h4>
+        <a href="{{ url_for('mistakes.list') }}" class="btn btn-secondary">返回列表</a>
+    </div>
+
+    {% if mistakes %}
+    <div class="row">
+        {% for m in mistakes %}
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge me-2" style="background-color: {{ m.subject|subject_color }}; color: white;">{{ m.subject }}</span>
+                        {{ m.topic or '综合' }}
+                    </div>
+                    <span class="badge bg-{{ 'danger' if m.difficulty == 'hard' else 'warning' if m.difficulty == 'medium' else 'success' }}">
+                        {{ m.difficulty }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ m.question_text[:100] }}{% if m.question_text|length > 100 %}...{% endif %}</p>
+                    <div class="row small text-muted mb-2">
+                        <div class="col-6">复习次数：{{ m.review_count }}</div>
+                        <div class="col-6">下次复习：{{ m.next_review|dateformat if m.next_review else '今天' }}</div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('mistakes.detail', id=m.id) }}" class="btn btn-sm btn-primary">查看详情</a>
+                        <form action="{{ url_for('mistakes.mark_reviewed', id=m.id) }}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-success">标记已复习</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+        <h4 class="mt-3">太棒了！</h4>
+        <p class="text-muted">今日没有需要复习的错题</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

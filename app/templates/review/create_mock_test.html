@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}创建模拟测试 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('review.mock_tests') }}">模拟测试</a></li>
+            <li class="breadcrumb-item active">创建测试</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">创建模拟测试</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="mb-3">
+                    <label class="form-label">测试标题</label>
+                    <input type="text" name="title" class="form-control" placeholder="如：期中模拟测试" required>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">科目</label>
+                        <select name="subject" class="form-select" required>
+                            <option value="">选择科目</option>
+                            <option value="语文">语文</option>
+                            <option value="数学">数学</option>
+                            <option value="英语">英语</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">章节（可选）</label>
+                        <input type="text" name="chapter" class="form-control" placeholder="如：第一章 有理数">
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> 系统将根据您选择的内容自动生成一套模拟试卷，包含多种题型。
+                </div>
+                <button type="submit" class="btn btn-primary">创建并开始测试</button>
+                <a href="{{ url_for('review.mock_tests') }}" class="btn btn-secondary">取消</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

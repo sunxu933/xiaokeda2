@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}学习资料 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">学习资料</h4>
+        <div>
+            <a href="{{ url_for('materials.browse') }}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-folder"></i> 本地浏览
+            </a>
+            <a href="{{ url_for('materials.compile') }}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-collection"></i> 题型汇编
+            </a>
+            <a href="{{ url_for('materials.upload') }}" class="btn btn-primary">
+                <i class="bi bi-upload"></i> 上传资料
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <select name="subject" class="form-select">
+                        <option value="">全部科目</option>
+                        <option value="语文" {% if request.args.get('subject') == '语文' %}selected{% endif %}>语文</option>
+                        <option value="数学" {% if request.args.get('subject') == '数学' %}selected{% endif %}>数学</option>
+                        <option value="英语" {% if request.args.get('subject') == '英语' %}selected{% endif %}>英语</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="type" class="form-select">
+                        <option value="">全部类型</option>
+                        <option value="试卷" {% if request.args.get('type') == '试卷' %}selected{% endif %}>试卷</option>
+                        <option value="练习册" {% if request.args.get('type') == '练习册' %}selected{% endif %}>练习册</option>
+                        <option value="讲义" {% if request.args.get('type') == '讲义' %}selected{% endif %}>讲义</option>
+                        <option value="课本" {% if request.args.get('type') == '课本' %}selected{% endif %}>课本</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">全部状态</option>
+                        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>待分析</option>
+                        <option value="analyzing" {% if request.args.get('status') == 'analyzing' %}selected{% endif %}>分析中</option>
+                        <option value="analyzed" {% if request.args.get('status') == 'analyzed' %}selected{% endif %}>已分析</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-secondary w-100">筛选</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if materials %}
+    <div class="row">
+        {% for m in materials %}
+        <div class="col-md-4 col-lg-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-truncate">{{ m.title }}</h6>
+                    <div class="mb-2">
+                        {% if m.subject %}
+                        <span class="badge me-1" style="background-color: {{ m.subject|subject_color }}; color: white;">{{ m.subject }}</span>
+                        {% endif %}
+                        {% if m.material_type %}
+                        <span class="badge bg-secondary">{{ m.material_type }}</span>
+                        {% endif %}
+                    </div>
+                    <small class="text-muted">
+                        {% if m.file_type %}{{ m.file_type|upper }}{% endif %}
+                        {% if m.source_grade %} · {{ m.source_grade }}年级{% endif %}
+                    </small>
+                    <div class="mt-2">
+                        {% if m.status == 'analyzed' %}
+                        <span class="badge bg-success">已分析</span>
+                        {% elif m.status == 'analyzing' %}
+                        <span class="badge bg-warning">分析中</span>
+                        {% elif m.status == 'failed' %}
+                        <span class="badge bg-danger">失败</span>
+                        {% else %}
+                        <span class="badge bg-secondary">待分析</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('materials.detail', id=m.id) }}" class="btn btn-sm btn-outline-primary w-100">查看详情</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-folder-open text-muted" style="font-size: 4rem;"></i>
+        <p class="text-muted mt-3">暂无学习资料</p>
+        <a href="{{ url_for('materials.upload') }}" class="btn btn-primary">上传资料</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

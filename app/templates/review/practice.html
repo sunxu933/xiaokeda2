@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}章节练习 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h4 class="mb-4">章节练习</h4>
+
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">选择章节</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for chapter in chapters %}
+                <div class="col-md-4 mb-2">
+                    <button class="btn btn-outline-primary w-100 chapter-btn"
+                            data-chapter="{{ chapter[2] }}"
+                            data-subject="{{ chapter[0] }}">
+                        {{ chapter[0] }} · {{ chapter[2] }}
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4" id="practiceCard" style="display: none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0" id="practiceTitle">练习题</h6>
+            <button class="btn btn-sm btn-primary" id="generateBtn">
+                <i class="bi bi-arrow-repeat"></i> 重新生成
+            </button>
+        </div>
+        <div class="card-body" id="practiceContent">
+            <p class="text-center text-muted">点击下方按钮生成练习</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentChapter = null;
+let currentSubject = null;
+
+document.querySelectorAll('.chapter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        currentChapter = this.dataset.chapter;
+        currentSubject = this.dataset.subject;
+        document.getElementById('practiceCard').style.display = 'block';
+        document.getElementById('practiceTitle').textContent = currentSubject + ' · ' + currentChapter;
+        generatePractice();
+    });
+});
+
+async function generatePractice() {
+    if (!currentChapter) return;
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    const res = await fetch('{{ url_for("review.generate_practice") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: currentChapter, subject: currentSubject, count: 5 })
+    });
+    const data = await res.json();
+
+    if (data.success && data.problems) {
+        let html = '';
+        data.problems.forEach((p, i) => {
+            html += `<div class="mb-4 p-3 border rounded">
+                <h6>题目 ${i + 1} <span class="badge bg-secondary">${p.type}</span></h6>
+                <p>${p.question}</p>
+                ${p.options && p.options.length ? '<div class="mt-2">' + p.options.map((o, oi) => `<div class="form-check"><input class="form-check-input" type="radio" name="q${i}"><label class="form-check-label">${o}</label></div>`).join('') + '</div>' : ''}
+                <details class="mt-2">
+                    <summary class="text-primary">查看答案</summary>
+                    <div class="mt-2 p-2 bg-light">
+                        <strong>答案：</strong>${p.answer}
+                    </div>
+                </details>
+            </div>`;
+        });
+        document.getElementById('practiceContent').innerHTML = html;
+    } else {
+        document.getElementById('practiceContent').innerHTML = '<p class="text-danger">生成失败</p>';
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> 重新生成';
+}
+
+document.getElementById('generateBtn').addEventListener('click', generatePractice);
+</script>
+{% endblock %}

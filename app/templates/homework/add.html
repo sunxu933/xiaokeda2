@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}添加作业 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('homework.list') }}">作业管理</a></li>
+            <li class="breadcrumb-item active">新建作业</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">新建作业</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label class="form-label">作业标题</label>
+                            {{ form.title(class="form-control") }}
+                            {% if form.title.errors %}<div class="text-danger small">{{ form.title.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">科目</label>
+                                {{ form.subject(class="form-select") }}
+                                {% if form.subject.errors %}<div class="text-danger small">{{ form.subject.errors[0] }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">作业日期</label>
+                                {{ form.homework_date(class="form-control", type="date") }}
+                                {% if form.homework_date.errors %}<div class="text-danger small">{{ form.homework_date.errors[0] }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">截止日期（可选）</label>
+                                {{ form.due_date(class="form-control", type="date") }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">备注</label>
+                            {{ form.notes(class="form-control", rows="3") }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">创建</button>
+                        <a href="{{ url_for('homework.list') }}" class="btn btn-secondary">取消</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">拍照识别</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">拍照上传作业，AI自动识别题目</p>
+                    <form id="photoForm" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <input type="file" name="photo" id="photoInput" class="form-control" accept="image/*" capture="environment">
+                        </div>
+                        <button type="button" id="recognizeBtn" class="btn btn-outline-primary w-100" disabled>
+                            <i class="bi bi-camera"></i> 识别作业
+                        </button>
+                    </form>
+                    <div id="photoResult" class="mt-3" style="display: none;">
+                        <div class="alert alert-info">
+                            <strong>识别结果：</strong>
+                            <span id="recognizedSubject"></span>
+                        </div>
+                        <div id="questionsList"></div>
+                        <button type="button" id="createFromPhoto" class="btn btn-success w-100">
+                            创建作业
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const photoInput = document.getElementById('photoInput');
+    const recognizeBtn = document.getElementById('recognizeBtn');
+    const photoResult = document.getElementById('photoResult');
+
+    photoInput.addEventListener('change', function() {
+        recognizeBtn.disabled = !this.files.length;
+    });
+
+    recognizeBtn.addEventListener('click', function() {
+        const formData = new FormData();
+        formData.append('photo', photoInput.files[0]);
+
+        recognizeBtn.disabled = true;
+        recognizeBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 识别中...';
+
+        fetch('{{ url_for("homework.recognize_photo") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('recognizedSubject').textContent = data.data.subject || '未知';
+                photoResult.style.display = 'block';
+            } else {
+                alert('识别失败: ' + data.error);
+            }
+        })
+        .catch(err => {
+            alert('识别失败: ' + err);
+        })
+        .finally(() => {
+            recognizeBtn.disabled = false;
+            recognizeBtn.innerHTML = '<i class="bi bi-camera"></i> 识别作业';
+        });
+    });
+});
+</script>
+{% endblock %}

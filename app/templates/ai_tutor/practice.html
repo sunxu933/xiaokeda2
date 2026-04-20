@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}举一反三 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('ai_tutor.chat') }}">AI辅导</a></li>
+            <li class="breadcrumb-item active">举一反三练习</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <span class="badge me-2" style="background-color: {{ mistake.subject|subject_color }}; color: white;">{{ mistake.subject }}</span>
+            基于：{{ mistake.topic or '错题' }}
+        </div>
+        <div class="card-body">
+            <h6>原题</h6>
+            <p class="text-muted">{{ mistake.question_text }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">生成的练习题</h5>
+            <button id="generateBtn" class="btn btn-primary">
+                <i class="bi bi-arrow-repeat"></i> 重新生成
+            </button>
+        </div>
+        <div class="card-body" id="problemsContainer">
+            <div class="text-center py-4">
+                <button id="generateBtn2" class="btn btn-primary btn-lg">
+                    <i class="bi bi-magic"></i> 点击生成练习题
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function generateProblems() {
+    const container = document.getElementById('problemsContainer');
+    container.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-lg"></span><p class="mt-2">生成中...</p></div>';
+
+    try {
+        const response = await fetch('{{ url_for("ai_tutor.generate_practice", id=mistake.id) }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'count=3'
+        });
+        const data = await response.json();
+
+        if (data.success && data.problems && data.problems.length > 0) {
+            let html = '';
+            data.problems.forEach((p, i) => {
+                html += `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6>题目 ${i + 1}</h6>
+                        <p>${p.question}</p>
+                        ${p.options && p.options.length ? '<div class="mb-2">' + p.options.map(o => '<div class="form-check"><input class="form-check-input" type="radio" name="q${i}"><label class="form-check-label">${o}</label></div>').join('') + '</div>' : ''}
+                        <details class="mt-2">
+                            <summary class="text-primary">查看答案</summary>
+                            <div class="mt-2 p-2 bg-light">
+                                <strong>答案：</strong>${p.answer}<br>
+                                <strong>解析：</strong>${p.explanation || '无'}
+                            </div>
+                        </details>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p class="text-center text-muted">未能生成练习题，请重试</p>';
+        }
+    } catch (err) {
+        container.innerHTML = '<p class="text-center text-danger">生成失败，请重试</p>';
+    }
+}
+
+document.getElementById('generateBtn')?.addEventListener('click', generateProblems);
+document.getElementById('generateBtn2')?.addEventListener('click', generateProblems);
+</script>
+{% endblock %}

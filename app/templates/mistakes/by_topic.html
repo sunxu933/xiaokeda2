@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}按主题分类 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">错题分类</h4>
+        <a href="{{ url_for('mistakes.list') }}" class="btn btn-secondary">返回列表</a>
+    </div>
+
+    <div class="row">
+        {% for topic in topics %}
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge me-2" style="background-color: {{ topic.subject|subject_color }}; color: white;">{{ topic.subject }}</span>
+                        {{ topic.topic }}
+                    </div>
+                    <span class="badge bg-primary">{{ topic.total_count }}题</span>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ (topic.mastered_count / topic.total_count * 100) if topic.total_count > 0 else 0 }}%"></div>
+                    </div>
+                    <small class="text-muted">已掌握 {{ topic.mastered_count }} / {{ topic.total_count }}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

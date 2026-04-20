@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRD Canvas Viewer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 1000;
+    }
+
+    .toolbar h1 {
+      font-size: 18px;
+      color: #f8fafc;
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .stat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .stat-dot.passed { background: #22c55e; }
+    .stat-dot.failed { background: #ef4444; }
+    .stat-dot.total { background: #3b82f6; }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      background: #334155;
+      color: #e2e8f0;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #475569; }
+    .btn.active { background: #3b82f6; }
+
+    .canvas-container {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: auto;
+      cursor: grab;
+    }
+
+    .canvas-container:active { cursor: grabbing; }
+
+    .canvas {
+      position: relative;
+      min-width: 100%;
+      min-height: 100%;
+    }
+
+    svg.connections {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .node {
+      position: absolute;
+      width: 220px;
+      background: #1e293b;
+      border-radius: 12px;
+      border: 2px solid #334155;
+      padding: 16px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      z-index: 10;
+    }
+
+    .node:hover {
+      transform: scale(1.02);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      z-index: 100;
+    }
+
+    .node.passed { border-color: #22c55e; }
+    .node.failed { border-color: #ef4444; }
+    .node.highlight {
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5);
+      z-index: 100;
+    }
+
+    .node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .node-id {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #334155;
+    }
+
+    .node.passed .node-id { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .node.failed .node-id { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    .status-icon {
+      font-size: 16px;
+    }
+
+    .node-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f8fafc;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .node-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .node-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #334155;
+    }
+
+    .priority-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .priority-badge.p1 { background: #dc2626; color: white; }
+    .priority-badge.p2 { background: #f97316; color: white; }
+    .priority-badge.p3 { background: #eab308; color: #1e1e1e; }
+    .priority-badge.p4 { background: #22c55e; color: white; }
+    .priority-badge.p5 { background: #3b82f6; color: white; }
+
+    .dep-count {
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .legend {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 12px;
+      z-index: 500;
+    }
+
+    .legend-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #94a3b8;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .legend-line {
+      width: 30px;
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    .legend-line.satisfied { background: #22c55e; }
+    .legend-line.unsatisfied { background: #ef4444; }
+    .legend-line.neutral { background: #64748b; }
+
+    .refresh-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 11px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .zoom-controls {
+      position: fixed;
+      bottom: 20px;
+      right: 150px;
+      display: flex;
+      gap: 8px;
+      z-index: 500;
+    }
+
+    .zoom-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .zoom-btn:hover { background: #334155; }
+
+    /* Column headers */
+    .column-header {
+      position: absolute;
+      top: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      width: 220px;
+      text-align: center;
+    }
+
+    /* Notifications */
+    .notifications {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .notification {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: #1e293b;
+      border-radius: 12px;
+      border-left: 4px solid #64748b;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transform: translateX(120%);
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: auto;
+      min-width: 280px;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .notification.success {
+      border-left-color: #22c55e;
+      background: linear-gradient(135deg, #1e293b 0%, #14532d 100%);
+    }
+
+    .notification.fail {
+      border-left-color: #ef4444;
+      background: linear-gradient(135deg, #1e293b 0%, #450a0a 100%);
+    }
+
+    .notif-icon {
+      font-size: 24px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .notification.success .notif-icon {
+      color: #22c55e;
+      background: rgba(34, 197, 94, 0.2);
+    }
+
+    .notification.fail .notif-icon {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .notif-content {
+      flex: 1;
+    }
+
+    .notif-id {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-bottom: 2px;
+    }
+
+    .notif-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f8fafc;
+      margin-bottom: 2px;
+    }
+
+    .notif-status {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .notification.success .notif-status { color: #22c55e; }
+    .notification.fail .notif-status { color: #ef4444; }
+
+    /* Flash animation for changed nodes */
+    .node.flash {
+      animation: flash 0.5s ease-in-out 3;
+    }
+
+    @keyframes flash {
+      0%, 100% {
+        box-shadow: 0 0 0 0 transparent;
+      }
+      50% {
+        box-shadow: 0 0 30px 10px rgba(59, 130, 246, 0.6);
+      }
+    }
+
+    .node.passed.flash {
+      animation: flash-green 0.5s ease-in-out 3;
+    }
+
+    @keyframes flash-green {
+      0%, 100% {
+        box-shadow: 0 0 0 0 transparent;
+      }
+      50% {
+        box-shadow: 0 0 30px 10px rgba(34, 197, 94, 0.6);
+      }
+    }
+
+    .node.failed.flash {
+      animation: flash-red 0.5s ease-in-out 3;
+    }
+
+    @keyframes flash-red {
+      0%, 100% {
+        box-shadow: 0 0 0 0 transparent;
+      }
+      50% {
+        box-shadow: 0 0 30px 10px rgba(239, 68, 68, 0.6);
+      }
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: #1e293b;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow: hidden;
+      transform: scale(0.9) translateY(20px);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-overlay.show .modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .modal-header-left {
+      flex: 1;
+    }
+
+    .modal-id {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    .modal.passed .modal-id {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .modal.failed .modal-id {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #f8fafc;
+      line-height: 1.3;
+    }
+
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: #334155;
+      color: #94a3b8;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .modal-close:hover {
+      background: #475569;
+      color: #f8fafc;
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-section {
+      margin-bottom: 24px;
+    }
+
+    .modal-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .modal-description {
+      font-size: 15px;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    .modal-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .modal-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #334155;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .modal-meta-label {
+      color: #94a3b8;
+    }
+
+    .modal-meta-value {
+      color: #f8fafc;
+      font-weight: 600;
+    }
+
+    .modal-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .modal.passed .modal-status {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .modal.failed .modal-status {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .modal-deps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .modal-dep {
+      padding: 6px 12px;
+      background: #334155;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .modal-dep:hover {
+      background: #475569;
+    }
+
+    .modal-dep.satisfied {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .modal-dep.unsatisfied {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .modal-notes {
+      font-size: 14px;
+      color: #94a3b8;
+      font-style: italic;
+      line-height: 1.5;
+      padding: 12px 16px;
+      background: #0f172a;
+      border-radius: 8px;
+      border-left: 3px solid #475569;
+    }
+
+    .no-deps {
+      color: #64748b;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1 id="project-name">Loading...</h1>
+    <div class="stats">
+      <div class="stat"><span class="stat-dot passed"></span><span id="passed-count">0</span> Passed</div>
+      <div class="stat"><span class="stat-dot failed"></span><span id="failed-count">0</span> Not Started</div>
+      <div class="stat"><span class="stat-dot total"></span><span id="total-count">0</span> Total</div>
+    </div>
+    <div class="controls">
+      <button class="btn" onclick="toggleLayout()">Toggle Layout</button>
+      <button class="btn" onclick="resetView()">Reset View</button>
+    </div>
+  </div>
+
+  <div class="canvas-container" id="container">
+    <div class="canvas" id="canvas">
+      <svg class="connections" id="connections"></svg>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-title">Dependencies</div>
+    <div class="legend-item"><div class="legend-line satisfied"></div> Satisfied</div>
+    <div class="legend-item"><div class="legend-line unsatisfied"></div> Not Started</div>
+  </div>
+
+  <div class="zoom-controls">
+    <button class="zoom-btn" onclick="zoom(0.1)">+</button>
+    <button class="zoom-btn" onclick="zoom(-0.1)">−</button>
+  </div>
+
+  <div class="refresh-indicator">
+    <span class="pulse"></span>
+    Auto-refresh 2s
+  </div>
+
+  <div id="notifications" class="notifications"></div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <span class="modal-id" id="modal-id"></span>
+          <h2 class="modal-title" id="modal-title"></h2>
+        </div>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <div class="modal-section-title">Status</div>
+          <div class="modal-status" id="modal-status"></div>
+        </div>
+        <div class="modal-section">
+          <div class="modal-section-title">Description</div>
+          <p class="modal-description" id="modal-description"></p>
+        </div>
+        <div class="modal-section">
+          <div class="modal-meta">
+            <div class="modal-meta-item">
+              <span class="modal-meta-label">Priority</span>
+              <span class="modal-meta-value" id="modal-priority"></span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-section" id="modal-deps-section">
+          <div class="modal-section-title">Dependencies</div>
+          <div class="modal-deps" id="modal-deps"></div>
+        </div>
+        <div class="modal-section" id="modal-notes-section">
+          <div class="modal-section-title">Notes</div>
+          <p class="modal-notes" id="modal-notes"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let data = null;
+    let storyMap = {};
+    let positions = {};
+    let scale = 1;
+    let layoutMode = 'dependency'; // 'dependency' or 'priority'
+    let previousPassesState = {}; // Track previous passes state
+
+    const CARD_WIDTH = 220;
+    const CARD_HEIGHT = 180;
+    const H_GAP = 80;
+    const V_GAP = 40;
+    const PADDING = 60;
+
+    // Audio context for notification sounds
+    let audioCtx = null;
+
+    function playSound(type) {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      if (type === 'success') {
+        // Happy ascending chime for pass
+        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+        oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialDecayTo && gainNode.gain.exponentialDecayTo(0.01, audioCtx.currentTime + 0.4);
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.4);
+      } else {
+        // Lower tone for fail
+        oscillator.frequency.setValueAtTime(293.66, audioCtx.currentTime); // D4
+        oscillator.frequency.setValueAtTime(261.63, audioCtx.currentTime + 0.15); // C4
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.3);
+      }
+    }
+
+    function showNotification(storyId, title, newStatus) {
+      const container = document.getElementById('notifications');
+      const notification = document.createElement('div');
+      notification.className = `notification ${newStatus ? 'success' : 'fail'}`;
+      notification.innerHTML = `
+        <div class="notif-icon">${newStatus ? '✓' : '✗'}</div>
+        <div class="notif-content">
+          <div class="notif-id">${storyId}</div>
+          <div class="notif-title">${title}</div>
+          <div class="notif-status">${newStatus ? 'Now passing!' : 'Marked not started'}</div>
+        </div>
+      `;
+
+      container.appendChild(notification);
+
+      // Trigger animation
+      setTimeout(() => notification.classList.add('show'), 10);
+
+      // Remove after 5 seconds
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+      }, 5000);
+    }
+
+    function checkForChanges(newData) {
+      const changes = [];
+
+      newData.userStories.forEach(story => {
+        const prevState = previousPassesState[story.id];
+        const newState = story.passes;
+
+        // Only notify if we have previous state and it changed
+        if (prevState !== undefined && prevState !== newState) {
+          changes.push({
+            id: story.id,
+            title: story.title,
+            newStatus: newState
+          });
+        }
+      });
+
+      // Update previous state
+      newData.userStories.forEach(story => {
+        previousPassesState[story.id] = story.passes;
+      });
+
+      return changes;
+    }
+
+    async function loadData() {
+      try {
+        const response = await fetch('prd.json?' + Date.now());
+        const newData = await response.json();
+
+        // Check for changes before updating
+        const changes = checkForChanges(newData);
+
+        // Only re-render if data changed
+        if (JSON.stringify(newData) !== JSON.stringify(data)) {
+          data = newData;
+          storyMap = {};
+          data.userStories.forEach(s => storyMap[s.id] = s);
+          calculatePositions();
+          render();
+
+          // Show notifications and play sounds for changes
+          changes.forEach(change => {
+            playSound(change.newStatus ? 'success' : 'fail');
+            showNotification(change.id, change.title, change.newStatus);
+
+            // Highlight the changed node
+            const node = document.getElementById(`node-${change.id}`);
+            if (node) {
+              node.classList.add('flash');
+              setTimeout(() => node.classList.remove('flash'), 2000);
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load prd.json:', err);
+      }
+    }
+
+    function getDepth(story, visited = new Set()) {
+      if (visited.has(story.id)) return 0;
+      visited.add(story.id);
+
+      if (!story.dependsOn || story.dependsOn.length === 0) return 0;
+
+      let maxDepth = 0;
+      for (const depId of story.dependsOn) {
+        const dep = storyMap[depId];
+        if (dep) {
+          maxDepth = Math.max(maxDepth, getDepth(dep, visited) + 1);
+        }
+      }
+      return maxDepth;
+    }
+
+    function calculatePositions() {
+      if (!data) return;
+      positions = {};
+
+      if (layoutMode === 'dependency') {
+        // Group by dependency depth
+        const depthGroups = {};
+        data.userStories.forEach(story => {
+          const depth = getDepth(story);
+          if (!depthGroups[depth]) depthGroups[depth] = [];
+          depthGroups[depth].push(story);
+        });
+
+        // Sort each group by priority
+        Object.keys(depthGroups).forEach(depth => {
+          depthGroups[depth].sort((a, b) => a.priority - b.priority);
+        });
+
+        // Position nodes
+        const depths = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
+        depths.forEach((depth, colIdx) => {
+          const stories = depthGroups[depth];
+          stories.forEach((story, rowIdx) => {
+            positions[story.id] = {
+              x: PADDING + colIdx * (CARD_WIDTH + H_GAP),
+              y: PADDING + 40 + rowIdx * (CARD_HEIGHT + V_GAP)
+            };
+          });
+        });
+      } else {
+        // Group by priority
+        const priorityGroups = {};
+        data.userStories.forEach(story => {
+          const p = story.priority;
+          if (!priorityGroups[p]) priorityGroups[p] = [];
+          priorityGroups[p].push(story);
+        });
+
+        const priorities = Object.keys(priorityGroups).map(Number).sort((a, b) => a - b);
+        priorities.forEach((priority, colIdx) => {
+          const stories = priorityGroups[priority];
+          // Sort by dependency depth within priority
+          stories.sort((a, b) => getDepth(a) - getDepth(b));
+          stories.forEach((story, rowIdx) => {
+            positions[story.id] = {
+              x: PADDING + colIdx * (CARD_WIDTH + H_GAP),
+              y: PADDING + 40 + rowIdx * (CARD_HEIGHT + V_GAP)
+            };
+          });
+        });
+      }
+    }
+
+    function render() {
+      if (!data) return;
+
+      document.getElementById('project-name').textContent = data.project;
+
+      const passed = data.userStories.filter(s => s.passes === true).length;
+      const failed = data.userStories.filter(s => s.passes === false).length;
+      document.getElementById('passed-count').textContent = passed;
+      document.getElementById('failed-count').textContent = failed;
+      document.getElementById('total-count').textContent = data.userStories.length;
+
+      const canvas = document.getElementById('canvas');
+      const svg = document.getElementById('connections');
+
+      // Calculate canvas size
+      let maxX = 0, maxY = 0;
+      Object.values(positions).forEach(pos => {
+        maxX = Math.max(maxX, pos.x + CARD_WIDTH + PADDING);
+        maxY = Math.max(maxY, pos.y + CARD_HEIGHT + PADDING);
+      });
+
+      canvas.style.width = maxX + 'px';
+      canvas.style.height = maxY + 'px';
+      svg.setAttribute('width', maxX);
+      svg.setAttribute('height', maxY);
+
+      // Render connections
+      let pathsHtml = '';
+      data.userStories.forEach(story => {
+        if (story.dependsOn) {
+          story.dependsOn.forEach(depId => {
+            const from = positions[depId];
+            const to = positions[story.id];
+            if (from && to) {
+              const satisfied = storyMap[depId]?.passes === true;
+              const color = satisfied ? '#22c55e' : '#ef4444';
+
+              // Curved path from right edge of dep to left edge of story
+              const startX = from.x + CARD_WIDTH;
+              const startY = from.y + CARD_HEIGHT / 2;
+              const endX = to.x;
+              const endY = to.y + CARD_HEIGHT / 2;
+              const midX = (startX + endX) / 2;
+
+              pathsHtml += `
+                <path d="M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}"
+                      stroke="${color}" stroke-width="2" fill="none" opacity="0.6"
+                      marker-end="url(#arrow-${satisfied ? 'green' : 'red'})"/>
+              `;
+            }
+          });
+        }
+      });
+
+      svg.innerHTML = `
+        <defs>
+          <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#22c55e" opacity="0.8"/>
+          </marker>
+          <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#ef4444" opacity="0.8"/>
+          </marker>
+        </defs>
+        ${pathsHtml}
+      `;
+
+      // Render nodes
+      const existingNodes = canvas.querySelectorAll('.node, .column-header');
+      existingNodes.forEach(n => n.remove());
+
+      // Add column headers
+      if (layoutMode === 'dependency') {
+        const depthGroups = {};
+        data.userStories.forEach(story => {
+          const depth = getDepth(story);
+          if (!depthGroups[depth]) depthGroups[depth] = [];
+          depthGroups[depth].push(story);
+        });
+        const depths = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
+        depths.forEach((depth, colIdx) => {
+          const header = document.createElement('div');
+          header.className = 'column-header';
+          header.style.left = (PADDING + colIdx * (CARD_WIDTH + H_GAP)) + 'px';
+          header.textContent = depth === 0 ? 'No Dependencies' : `Depth ${depth}`;
+          canvas.appendChild(header);
+        });
+      } else {
+        const priorityGroups = {};
+        data.userStories.forEach(story => {
+          if (!priorityGroups[story.priority]) priorityGroups[story.priority] = [];
+          priorityGroups[story.priority].push(story);
+        });
+        const priorities = Object.keys(priorityGroups).map(Number).sort((a, b) => a - b);
+        priorities.forEach((priority, colIdx) => {
+          const header = document.createElement('div');
+          header.className = 'column-header';
+          header.style.left = (PADDING + colIdx * (CARD_WIDTH + H_GAP)) + 'px';
+          header.textContent = `Priority ${priority}`;
+          canvas.appendChild(header);
+        });
+      }
+
+      // Render story nodes
+      data.userStories.forEach(story => {
+        const pos = positions[story.id];
+        if (!pos) return;
+
+        const node = document.createElement('div');
+        node.className = `node ${story.passes ? 'passed' : 'failed'}`;
+        node.id = `node-${story.id}`;
+        node.style.left = pos.x + 'px';
+        node.style.top = pos.y + 'px';
+
+        const depCount = story.dependsOn?.length || 0;
+        const depText = depCount > 0 ? `${depCount} dep${depCount > 1 ? 's' : ''}` : 'No deps';
+
+        node.innerHTML = `
+          <div class="node-header">
+            <span class="node-id">${story.id}</span>
+            <span class="status-icon">${story.passes ? '✓' : '✗'}</span>
+          </div>
+          <div class="node-title">${story.title}</div>
+          <div class="node-desc">${story.description}</div>
+          <div class="node-footer">
+            <span class="priority-badge p${Math.min(story.priority, 5)}">P${story.priority}</span>
+            <span class="dep-count">${depText}</span>
+          </div>
+        `;
+
+        node.addEventListener('click', () => openModal(story.id));
+        canvas.appendChild(node);
+      });
+    }
+
+    function openModal(storyId) {
+      const story = storyMap[storyId];
+      if (!story) return;
+
+      const modal = document.getElementById('modal');
+      const overlay = document.getElementById('modal-overlay');
+
+      // Set modal class for styling
+      modal.className = `modal ${story.passes ? 'passed' : 'failed'}`;
+
+      // Populate content
+      document.getElementById('modal-id').textContent = story.id;
+      document.getElementById('modal-title').textContent = story.title;
+      document.getElementById('modal-description').textContent = story.description;
+      document.getElementById('modal-priority').textContent = `P${story.priority}`;
+      document.getElementById('modal-status').innerHTML = story.passes
+        ? '✓ Passed'
+        : '✗ Not Started';
+
+      // Dependencies
+      const depsContainer = document.getElementById('modal-deps');
+      const depsSection = document.getElementById('modal-deps-section');
+
+      if (story.dependsOn && story.dependsOn.length > 0) {
+        depsSection.style.display = 'block';
+        depsContainer.innerHTML = story.dependsOn.map(depId => {
+          const dep = storyMap[depId];
+          const satisfied = dep?.passes === true;
+          const depTitle = dep?.title || depId;
+          return `<span class="modal-dep ${satisfied ? 'satisfied' : 'unsatisfied'}"
+                        onclick="openModal('${depId}')" title="${depTitle}">
+                    ${satisfied ? '✓' : '✗'} ${depId}
+                  </span>`;
+        }).join('');
+      } else {
+        depsSection.style.display = 'block';
+        depsContainer.innerHTML = '<span class="no-deps">No dependencies</span>';
+      }
+
+      // Notes
+      const notesSection = document.getElementById('modal-notes-section');
+      const notesContent = document.getElementById('modal-notes');
+
+      if (story.notes) {
+        notesSection.style.display = 'block';
+        notesContent.textContent = story.notes;
+      } else {
+        notesSection.style.display = 'none';
+      }
+
+      // Show modal
+      overlay.classList.add('show');
+
+      // Also highlight the node on the canvas
+      highlightConnections(storyId);
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('show');
+      // Clear highlights
+      document.querySelectorAll('.node').forEach(n => n.classList.remove('highlight'));
+    }
+
+    // Close modal on overlay click
+    document.getElementById('modal-overlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('modal-overlay')) {
+        closeModal();
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    function highlightConnections(storyId) {
+      // Clear previous highlights
+      document.querySelectorAll('.node').forEach(n => n.classList.remove('highlight'));
+
+      const story = storyMap[storyId];
+      if (!story) return;
+
+      // Highlight this node
+      document.getElementById(`node-${storyId}`)?.classList.add('highlight');
+
+      // Highlight dependencies
+      if (story.dependsOn) {
+        story.dependsOn.forEach(depId => {
+          document.getElementById(`node-${depId}`)?.classList.add('highlight');
+        });
+      }
+
+      // Highlight dependents
+      data.userStories.forEach(s => {
+        if (s.dependsOn?.includes(storyId)) {
+          document.getElementById(`node-${s.id}`)?.classList.add('highlight');
+        }
+      });
+    }
+
+    function toggleLayout() {
+      layoutMode = layoutMode === 'dependency' ? 'priority' : 'dependency';
+      calculatePositions();
+      render();
+    }
+
+    function resetView() {
+      scale = 1;
+      document.getElementById('canvas').style.transform = `scale(${scale})`;
+      document.getElementById('canvas').style.transformOrigin = 'top left';
+      document.getElementById('container').scrollTo(0, 0);
+    }
+
+    function zoom(delta) {
+      scale = Math.max(0.3, Math.min(2, scale + delta));
+      document.getElementById('canvas').style.transform = `scale(${scale})`;
+      document.getElementById('canvas').style.transformOrigin = 'top left';
+    }
+
+    // Pan functionality
+    let isPanning = false;
+    let startX, startY, scrollLeft, scrollTop;
+
+    const container = document.getElementById('container');
+    container.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.node')) return;
+      isPanning = true;
+      startX = e.pageX - container.offsetLeft;
+      startY = e.pageY - container.offsetTop;
+      scrollLeft = container.scrollLeft;
+      scrollTop = container.scrollTop;
+    });
+
+    container.addEventListener('mousemove', (e) => {
+      if (!isPanning) return;
+      e.preventDefault();
+      const x = e.pageX - container.offsetLeft;
+      const y = e.pageY - container.offsetTop;
+      container.scrollLeft = scrollLeft - (x - startX);
+      container.scrollTop = scrollTop - (y - startY);
+    });
+
+    container.addEventListener('mouseup', () => isPanning = false);
+    container.addEventListener('mouseleave', () => isPanning = false);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '+' || e.key === '=') zoom(0.1);
+      if (e.key === '-') zoom(-0.1);
+      if (e.key === '0') resetView();
+      if (e.key === 'l' || e.key === 'L') toggleLayout();
+    });
+
+    // Initial load and polling
+    loadData();
+    setInterval(loadData, 2000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}AI配置 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('settings.index') }}">系统设置</a></li>
+            <li class="breadcrumb-item active">AI配置</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">AI API 配置</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <label class="form-label">API Endpoint</label>
+                    <input type="text" name="ai_api_endpoint" class="form-control" value="{{ settings.ai_api_endpoint or 'https://api.openai.com/v1' }}" placeholder="https://api.openai.com/v1">
+                    <small class="text-muted">支持 OpenAI、DeepSeek、GLM、MiniMax 等兼容API</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">API Key</label>
+                    <input type="password" name="ai_api_key" class="form-control" value="{{ settings.ai_api_key or '' }}" placeholder="sk-...">
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">默认模型</label>
+                        <input type="text" name="ai_model" class="form-control" value="{{ settings.ai_model or 'gpt-4o' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">视觉模型</label>
+                        <input type="text" name="ai_vision_model" class="form-control" value="{{ settings.ai_vision_model or 'gpt-4o' }}">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">保存配置</button>
+                <button type="button" id="testBtn" class="btn btn-outline-success">
+                    <i class="bi bi-plug"></i> 测试连接
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h6 class="mb-0">配置说明</h6>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li><strong>OpenAI：</strong>Endpoint: https://api.openai.com/v1, Key: 您的OpenAI API Key</li>
+                <li><strong>DeepSeek：</strong>Endpoint: https://api.deepseek.com/v1, Key: 您的DeepSeek API Key</li>
+                <li><strong>智谱GLM：</strong>Endpoint: https://open.bigmodel.cn/api/paas/v4, Key: 您的API Key</li>
+                <li><strong>MiniMax：</strong>Endpoint: https://api.minimaxi.com/v1, Key: 您的API Key</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('testBtn').addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 测试中...';
+
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('{{ url_for("settings.test_ai") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            alert('连接成功！');
+        } else {
+            alert('连接失败: ' + data.message);
+        }
+    } catch (err) {
+        alert('连接失败');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-plug"></i> 测试连接';
+});
+</script>
+{% endblock %}

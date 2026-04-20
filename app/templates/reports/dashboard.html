@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}学情报告 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h4 class="mb-4">学情报告</h4>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">学习时长统计（近30天）</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="studyTimeChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">错题分布</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="mistakeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">学科对比</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="subjectChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">薄弱环节</h6>
+            <a href="{{ url_for('reports.weak_areas') }}" class="btn btn-sm btn-outline-primary">查看详情</a>
+        </div>
+        <div class="card-body" id="weakAreas">
+            <p class="text-muted">加载中...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadReportData() {
+    // Study time chart
+    const studyRes = await fetch('{{ url_for("reports.api_study_time") }}');
+    const studyData = await studyRes.json();
+
+    const ctx = document.getElementById('studyTimeChart').getContext('2d');
+    const dailyData = studyData.daily_data || {};
+    const labels = Object.keys(dailyData).slice(-14);
+    const mathData = labels.map(d => dailyData[d]?.数学 || 0);
+    const chineseData = labels.map(d => dailyData[d]?.语文 || 0);
+    const englishData = labels.map(d => dailyData[d]?.英语 || 0);
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: '数学', data: mathData, borderColor: '#3498db', tension: 0.1 },
+                { label: '语文', data: chineseData, borderColor: '#e74c3c', tension: 0.1 },
+                { label: '英语', data: englishData, borderColor: '#2ecc71', tension: 0.1 }
+            ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // Mistake distribution
+    const mistakeRes = await fetch('{{ url_for("reports.api_mistake_distribution") }}');
+    const mistakeData = await mistakeRes.json();
+
+    const mistakeCtx = document.getElementById('mistakeChart').getContext('2d');
+    new Chart(mistakeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['数学', '语文', '英语'],
+            datasets: [{
+                data: [mistakeData.by_subject?.数学 || 0, mistakeData.by_subject?.语文 || 0, mistakeData.by_subject?.英语 || 0],
+                backgroundColor: ['#3498db', '#e74c3c', '#2ecc71']
+            }]
+        }
+    });
+
+    // Subject comparison
+    const subjectRes = await fetch('{{ url_for("reports.api_subject_comparison") }}');
+    const subjectData = await subjectRes.json();
+
+    const subjectCtx = document.getElementById('subjectChart').getContext('2d');
+    const subjects = subjectData.subjects || [];
+    new Chart(subjectCtx, {
+        type: 'radar',
+        data: {
+            labels: ['错题数', '掌握率', '作业数', '完成率'],
+            datasets: subjects.map((s, i) => ({
+                label: s.subject,
+                data: [s.mistake_count, s.mastery_rate, s.homework_count, s.completion_rate],
+                borderColor: ['#3498db', '#e74c3c', '#2ecc71'][i]
+            }))
+        }
+    });
+
+    // Weak areas
+    const weakRes = await fetch('{{ url_for("reports.weak_areas") }}');
+    const weakData = await weakRes.json();
+    // Note: This should use weak_areas endpoint
+}
+
+loadReportData().catch(console.error);
+</script>
+{% endblock %}

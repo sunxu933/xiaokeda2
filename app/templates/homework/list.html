@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}作业管理 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">作业管理</h4>
+        <a href="{{ url_for('homework.add') }}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> 新建作业
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <select name="subject" class="form-select">
+                        <option value="">全部科目</option>
+                        <option value="语文" {% if request.args.get('subject') == '语文' %}selected{% endif %}>语文</option>
+                        <option value="数学" {% if request.args.get('subject') == '数学' %}selected{% endif %}>数学</option>
+                        <option value="英语" {% if request.args.get('subject') == '英语' %}selected{% endif %}>英语</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">全部状态</option>
+                        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>待完成</option>
+                        <option value="in_progress" {% if request.args.get('status') == 'in_progress' %}selected{% endif %}>进行中</option>
+                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>已完成</option>
+                        <option value="reviewed" {% if request.args.get('status') == 'reviewed' %}selected{% endif %}>已复习</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_from" class="form-control" value="{{ request.args.get('date_from', '') }}" placeholder="开始日期">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_to" class="form-control" value="{{ request.args.get('date_to', '') }}" placeholder="结束日期">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100">筛选</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if homeworks %}
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>标题</th>
+                        <th>科目</th>
+                        <th>状态</th>
+                        <th>错题</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hw in homeworks %}
+                    <tr>
+                        <td>{{ hw.homework_date|dateformat }}</td>
+                        <td>{{ hw.title }}</td>
+                        <td>
+                            <span class="badge subject-badge" style="background-color: {{ hw.subject|subject_color }}; color: white;">
+                                {{ hw.subject }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if hw.status == 'completed' %}
+                            <span class="badge bg-success">已完成</span>
+                            {% elif hw.status == 'in_progress' %}
+                            <span class="badge bg-warning">进行中</span>
+                            {% elif hw.status == 'reviewed' %}
+                            <span class="badge bg-info">已复习</span>
+                            {% else %}
+                            <span class="badge bg-secondary">待完成</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ hw.mistake_count }}</td>
+                        <td>
+                            <a href="{{ url_for('homework.detail', id=hw.id) }}" class="btn btn-sm btn-outline-primary">查看</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <p class="text-muted">暂无作业记录</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

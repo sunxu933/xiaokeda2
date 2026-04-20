@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}知识库 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">知识库</h4>
+        <a href="{{ url_for('materials.practice') }}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> 开始练习
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <select name="subject" class="form-select">
+                        <option value="">全部科目</option>
+                        <option value="语文" {% if request.args.get('subject') == '语文' %}selected{% endif %}>语文</option>
+                        <option value="数学" {% if request.args.get('subject') == '数学' %}selected{% endif %}>数学</option>
+                        <option value="英语" {% if request.args.get('subject') == '英语' %}selected{% endif %}>英语</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select name="grade" class="form-select">
+                        {% for g in range(1, 7) %}
+                        <option value="{{ g }}" {% if student.grade == g %}selected{% endif %}>{{ g }}年级</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-secondary w-100">筛选</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% for chapter in chapters %}
+    <div class="card mb-3">
+        <div class="card-header">
+            <span class="badge me-2" style="background-color: {{ chapter.subject|subject_color }}; color: white;">{{ chapter.subject }}</span>
+            {{ chapter.semester }} · {{ chapter.chapter }}
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for topic in chapter.topics %}
+                <div class="col-md-4 mb-2">
+                    <span class="text-muted">{{ topic.topic }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

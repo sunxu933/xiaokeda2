@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}添加错题 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('mistakes.list') }}">错题本</a></li>
+            <li class="breadcrumb-item active">添加错题</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">添加错题</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {{ form.hidden_tag() }}
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">科目</label>
+                        {{ form.subject(class="form-select") }}
+                        {% if form.subject.errors %}<div class="text-danger small">{{ form.subject.errors[0] }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">主题</label>
+                        {{ form.topic(class="form-control") }}
+                        {% if form.topic.errors %}<div class="text-danger small">{{ form.topic.errors[0] }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">知识点</label>
+                        {{ form.knowledge_point(class="form-control") }}
+                        {% if form.knowledge_point.errors %}<div class="text-danger small">{{ form.knowledge_point.errors[0] }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">题目内容</label>
+                    {{ form.question_text(class="form-control", rows="3") }}
+                    {% if form.question_text.errors %}<div class="text-danger small">{{ form.question_text.errors[0] }}</div>{% endif %}
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">学生错误答案</label>
+                        {{ form.student_answer(class="form-control") }}
+                        {% if form.student_answer.errors %}<div class="text-danger small">{{ form.student_answer.errors[0] }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">正确答案</label>
+                        {{ form.correct_answer(class="form-control") }}
+                        {% if form.correct_answer.errors %}<div class="text-danger small">{{ form.correct_answer.errors[0] }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">解析</label>
+                    {{ form.explanation(class="form-control", rows="3") }}
+                    {% if form.explanation.errors %}<div class="text-danger small">{{ form.explanation.errors[0] }}</div>{% endif %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">难度</label>
+                    {{ form.difficulty(class="form-select") }}
+                    {% if form.difficulty.errors %}<div class="text-danger small">{{ form.difficulty.errors[0] }}</div>{% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary">添加</button>
+                <a href="{{ url_for('mistakes.list') }}" class="btn btn-secondary">取消</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

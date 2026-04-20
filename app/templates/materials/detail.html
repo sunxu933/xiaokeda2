@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}{{ material.title }} - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('materials.list') }}">学习资料</a></li>
+            <li class="breadcrumb-item active">{{ material.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">{{ material.title }}</h5>
+                    </div>
+                    <div>
+                        {% if material.status == 'analyzed' %}
+                        <span class="badge bg-success">已分析</span>
+                        {% elif material.status == 'analyzing' %}
+                        <span class="badge bg-warning">分析中</span>
+                        {% elif material.status == 'failed' %}
+                        <span class="badge bg-danger">失败</span>
+                        {% else %}
+                        <span class="badge bg-secondary">待分析</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>科目：</strong>
+                            {% if material.subject %}
+                            <span class="badge" style="background-color: {{ material.subject|subject_color }}; color: white;">{{ material.subject }}</span>
+                            {% else %}-{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>类型：</strong>{{ material.material_type or '-' }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>年级：</strong>{{ material.source_grade or '-' }}
+                        </div>
+                    </div>
+
+                    {% if material.description %}
+                    <div class="mb-3">
+                        <strong>描述：</strong>{{ material.description }}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <strong>文件：</strong>
+                        <a href="/static/{{ material.file_path }}" target="_blank">{{ material.title }}</a>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    {% if material.status != 'analyzed' and material.status != 'analyzing' %}
+                    <form action="{{ url_for('materials.analyze', id=material.id) }}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-cpu"></i> AI分析
+                        </button>
+                    </form>
+                    {% endif %}
+                    <form action="{{ url_for('materials.delete', id=material.id) }}" method="post" class="d-inline" onsubmit="return confirm('确定删除吗？')">
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> 删除
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% if material.questions %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">提取的题目 ({{ material.questions|length }})</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>题号</th>
+                                <th>题目类型</th>
+                                <th>知识点</th>
+                                <th>难度</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for q in material.questions %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ q.question_type or '-' }}</td>
+                                <td>{{ q.knowledge_point or '-' }}</td>
+                                <td>
+                                    {% if q.difficulty == 'easy' %}
+                                    <span class="badge bg-success">简单</span>
+                                    {% elif q.difficulty == 'medium' %}
+                                    <span class="badge bg-warning">中等</span>
+                                    {% elif q.difficulty == 'hard' %}
+                                    <span class="badge bg-danger">困难</span>
+                                    {% else %}-{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            {% if material.knowledge_points %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">知识点</h6>
+                </div>
+                <div class="card-body">
+                    {% for kp in material.knowledge_points %}
+                    <div class="mb-2">
+                        <span class="badge bg-info me-1">{{ kp.chapter }}</span>
+                        {{ kp.topic }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

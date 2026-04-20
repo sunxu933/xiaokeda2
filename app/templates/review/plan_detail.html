@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}{{ plan.title }} - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('review.list') }}">复习计划</a></li>
+            <li class="breadcrumb-item active">{{ plan.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">{{ plan.title }}</h5>
+                <small class="text-muted">
+                    {{ plan.subject or '全科' }} ·
+                    {% if plan.exam_date %}考试 {{ plan.exam_date|dateformat }}{% endif %}
+                </small>
+            </div>
+            <div>
+                <span class="badge bg-{{ 'success' if plan.status == 'active' else 'secondary' }}">{{ plan.status }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="progress mb-2" style="height: 12px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ plan.progress_percentage }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ plan.completed_tasks }} / {{ plan.total_tasks }} 任务完成</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% for day, tasks in tasks_by_day.items() %}
+    <div class="card mb-3">
+        <div class="card-header">
+            第{{ day }}天 {% if tasks[0].scheduled_date %} · {{ tasks[0].scheduled_date|dateformat }}{% endif %}
+        </div>
+        <div class="card-body">
+            {% for task in tasks %}
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                <div>
+                    <span class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' if task.status == 'pending' else 'secondary' }} me-2">
+                        {{ task.task_type }}
+                    </span>
+                    {{ task.description }}
+                    <small class="text-muted">({{ task.subject }})</small>
+                </div>
+                <div>
+                    {% if task.status == 'pending' %}
+                    <form action="{{ url_for('review.complete_task', plan_id=plan.id, tid=task.id) }}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-success">完成</button>
+                    </form>
+                    <form action="{{ url_for('review.skip_task', plan_id=plan.id, tid=task.id) }}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">跳过</button>
+                    </form>
+                    {% elif task.status == 'completed' %}
+                    <span class="text-success"><i class="bi bi-check-circle"></i> 已完成</span>
+                    {% elif task.status == 'skipped' %}
+                    <span class="text-muted"><i class="bi bi-arrow-right-circle"></i> 已跳过</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}编辑作业 - 小课大{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('homework.list') }}">作业管理</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('homework.detail', id=homework.id) }}">{{ homework.title }}</a></li>
+            <li class="breadcrumb-item active">编辑</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">编辑作业</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="mb-3">
+                    <label class="form-label">作业标题</label>
+                    <input type="text" name="title" class="form-control" value="{{ homework.title }}" required>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">科目</label>
+                        <select name="subject" class="form-select" required>
+                            <option value="语文" {% if homework.subject == '语文' %}selected{% endif %}>语文</option>
+                            <option value="数学" {% if homework.subject == '数学' %}selected{% endif %}>数学</option>
+                            <option value="英语" {% if homework.subject == '英语' %}selected{% endif %}>英语</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">作业日期</label>
+                        <input type="date" name="homework_date" class="form-control" value="{{ homework.homework_date.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">截止日期</label>
+                        <input type="date" name="due_date" class="form-control" value="{{ homework.due_date.strftime('%Y-%m-%d') if homework.due_date else '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">得分</label>
+                        <input type="number" step="0.1" name="total_score" class="form-control" value="{{ homework.total_score or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">满分</label>
+                        <input type="number" step="0.1" name="max_score" class="form-control" value="{{ homework.max_score or '' }}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">状态</label>
+                    <select name="status" class="form-select">
+                        <option value="pending" {% if homework.status == 'pending' %}selected{% endif %}>待完成</option>
+                        <option value="in_progress" {% if homework.status == 'in_progress' %}selected{% endif %}>进行中</option>
+                        <option value="completed" {% if homework.status == 'completed' %}selected{% endif %}>已完成</option>
+                        <option value="reviewed" {% if homework.status == 'reviewed' %}selected{% endif %}>已复习</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">备注</label>
+                    <textarea name="notes" class="form-control" rows="3">{{ homework.notes or '' }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">保存</button>
+                <a href="{{ url_for('homework.detail', id=homework.id) }}" class="btn btn-secondary">取消</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

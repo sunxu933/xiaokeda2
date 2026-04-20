@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if config.get('WTF_CSRF_ENABLED', True) %}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    {% endif %}
+    <title>{% block title %}小课大 - 学习辅导助手{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a90d9;
+            --secondary-color: #6c757d;
+        }
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; }
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 220px;
+            height: calc(100vh - 56px);
+            background: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+            padding-top: 1rem;
+        }
+        .sidebar .nav-link {
+            color: #333;
+            padding: 0.75rem 1rem;
+            border-radius: 0.25rem;
+            margin: 0.25rem 0.5rem;
+        }
+        .sidebar .nav-link:hover { background: #e9ecef; }
+        .sidebar .nav-link.active { background: var(--primary-color); color: white; }
+        .sidebar .nav-link i { width: 24px; }
+        .main-content {
+            margin-left: 220px;
+            padding: 1.5rem;
+            min-height: calc(100vh - 56px);
+        }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+            .sidebar.show { display: block; position: fixed; z-index: 1000; }
+        }
+        .card-stat {
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.2s;
+        }
+        .card-stat:hover { transform: translateY(-2px); }
+        .subject-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .navbar-brand i { color: var(--primary-color); }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="bi bi-book-half"></i> 小课大
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if g.current_student %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="studentDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ g.current_student.name }} ({{ g.current_student.grade }}年级)
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('settings.student_profile') }}">切换学生</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('settings.index') }}">系统设置</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('settings.student_profile') }}">设置学生</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% if g.current_student %}
+    <nav class="sidebar">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('main.index') }}">
+                    <i class="bi bi-house"></i> 首页
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('homework.list') }}">
+                    <i class="bi bi-journal-text"></i> 作业管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('mistakes.list') }}">
+                    <i class="bi bi-exclamation-triangle"></i> 错题本
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('ai_tutor.chat') }}">
+                    <i class="bi bi-robot"></i> AI辅导
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('materials.list') }}">
+                    <i class="bi bi-folder"></i> 学习资料
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('review.list') }}">
+                    <i class="bi bi-calendar-check"></i> 复习计划
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('reports.dashboard') }}">
+                    <i class="bi bi-graph-up"></i> 学情报告
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('settings.index') }}">
+                    <i class="bi bi-gear"></i> 系统设置
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container-fluid">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // CSRF token helpers
+        function getCSRFToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        }
+
+        // Add CSRF token to all forms on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]') && !form.querySelector('input[name="csrf-token"]')) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrf_token';
+                    csrfInput.value = getCSRFToken();
+                    form.insertBefore(csrfInput, form.firstChild);
+                }
+            });
+        });
+
+        // Add CSRF token to all fetch requests
+        const originalFetch = window.fetch;
+        window.fetch = function() {
+            const args = Array.prototype.slice.call(arguments);
+            const headers = args[1]?.headers || {};
+
+            if (!args[0].startsWith(window.location.origin + '/')) {
+                return originalFetch.apply(this, arguments);
+            }
+
+            headers['X-CSRFToken'] = getCSRFToken();
+            args[1] = Object.assign({}, args[1], { headers });
+            return originalFetch.apply(this, args);
+        };
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
